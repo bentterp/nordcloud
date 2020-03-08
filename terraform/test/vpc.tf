@@ -1,7 +1,7 @@
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
 
-  name = "notejam-test"
+  name = "notejam-${local.environment}"
   cidr = "10.2.0.0/16"
 
   azs             = ["eu-central-1a", "eu-central-1b", "eu-central-1c"]
@@ -13,8 +13,22 @@ module "vpc" {
 
   tags = {
     Terraform = "true"
-    Environment = "test"
+    Environment = local.environment
   }
+}
+
+resource "aws_security_group" "dbserver" {
+  name        = "allow_db"
+  description = "Allow inbound db traffic from webservers"
+  vpc_id      = module.vpc.vpc_id
+}
+resource "aws_security_group_rule" "allow_db" {
+  type            = "ingress"
+  from_port       = aws_rds_cluster.serverless.port
+  to_port         = aws_rds_cluster.serverless.port
+  protocol        = "tcp"
+  source_security_group_id = aws_security_group.webserver.id
+  security_group_id = aws_security_group.dbserver.id
 }
 
 resource "aws_security_group" "webserver" {
@@ -39,6 +53,28 @@ resource "aws_security_group_rule" "allow_https" {
   security_group_id = aws_security_group.webserver.id
 }
 
+resource "aws_security_group" "flaskserver" {
+  name        = "allow_flask"
+  description = "Allow inbound website traffic to Flask default port 5000"
+  vpc_id      = module.vpc.vpc_id
+}
+resource "aws_security_group_rule" "allow_flask" {
+  type            = "ingress"
+  from_port       = 5000
+  to_port         = 5000
+  protocol        = "tcp"
+  cidr_blocks = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.flaskserver.id
+}
+resource "aws_security_group_rule" "allow_dbegress" {
+  type                      = "egress"
+  from_port                 = aws_rds_cluster.serverless.port
+  to_port                   = aws_rds_cluster.serverless.port
+  protocol                  = "tcp"
+  source_security_group_id  = aws_security_group.dbserver.id
+  security_group_id         = aws_security_group.flaskserver.id
+}
+
 resource "aws_security_group" "adminssh" {
   name        = "admin_ssh"
   description = "Allow inbound SSH traffic from adminhosts"
@@ -59,11 +95,11 @@ resource "aws_security_group" "outboundanyany" {
   vpc_id      = module.vpc.vpc_id
 }
 resource "aws_security_group_rule" "allow_outbound_tcp"{
-  type            = "egress"
-  from_port       = 0
-  to_port         = 65535
-  protocol        = "tcp"
-  cidr_blocks = ["0.0.0.0/0"]
+  type              = "egress"
+  from_port         = 0
+  to_port           = 65535
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
   security_group_id = aws_security_group.outboundanyany.id
 }
 

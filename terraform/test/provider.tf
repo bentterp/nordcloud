@@ -8,3 +8,7 @@ provider dns {
 provider template {
   version = "~> 2.1" 
 }
+provider random {
+  version = "~> 2.2"
+}
+
