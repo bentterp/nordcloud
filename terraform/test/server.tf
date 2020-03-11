@@ -1,8 +1,6 @@
 data "aws_ami" "c7" {
-#  executable_users = ["self"]
-  most_recent      = true
-#  name_regex       = "^myami-\\d{3}"
-  owners           = ["679593333241"]
+  most_recent = true
+  owners      = ["679593333241"]
 
   filter {
     name   = "description"
@@ -10,9 +8,6 @@ data "aws_ami" "c7" {
   }
 
 }
-
-
-
 
 module "server" {
   source                      = "terraform-aws-modules/ec2-instance/aws"
@@ -23,7 +18,7 @@ module "server" {
   user_data_base64            = data.template_cloudinit_config.config.rendered
   key_name                    = "bentkey"
   subnet_ids                  = module.vpc.public_subnets
-  vpc_security_group_ids      = [ aws_security_group.adminssh.id, aws_security_group.flaskserver.id , aws_security_group.outboundanyany.id ]
+  vpc_security_group_ids      = [aws_security_group.adminssh.id, aws_security_group.flaskserver.id, aws_security_group.outboundanyany.id]
   root_block_device           = [{ delete_on_termination : "true" }]
 }
 

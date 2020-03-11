@@ -5,7 +5,7 @@ resource "aws_rds_cluster" "serverless" {
   engine_mode               = "serverless"
   availability_zones        = module.vpc.azs
   db_subnet_group_name      = module.vpc.database_subnet_group
-  vpc_security_group_ids    = [ aws_security_group.dbserver.id ]
+  vpc_security_group_ids    = [aws_security_group.dbserver.id]
   database_name             = "notejam"
   master_username           = random_pet.master_username.id
   master_password           = random_password.master_password.result
@@ -18,6 +18,6 @@ resource "random_pet" "master_username" {
   length = 1
 }
 resource "random_password" "master_password" {
-  length = 16
+  length  = 16
   special = false
 }
